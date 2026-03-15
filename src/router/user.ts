@@ -47,8 +47,7 @@ export const userRouter = new Elysia({ prefix: '/users' })
             user,
           };
         } catch (e) {
-          console.log(e);
-          return error(400, 'User already exists');
+          return error(400, { message: 'User already exists', error: e });
         }
       }),
   )

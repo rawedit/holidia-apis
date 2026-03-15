@@ -1,26 +1,26 @@
-import { Elysia, error, t } from "elysia";
-import jwt from "@elysiajs/jwt";
-import { db } from "~/db";
-import { authPlugin } from "~/middleware/auth";
+import jwt from '@elysiajs/jwt';
+import { Elysia, error, t } from 'elysia';
+import { db } from '~/db';
+import { authPlugin } from '~/middleware/auth';
 
-export const userRouter = new Elysia({ prefix: "/users" })
+export const userRouter = new Elysia({ prefix: '/users' })
   .use(
     jwt({
       secret: Bun.env.JWT_TOKEN as string,
-    })
+    }),
   )
   .guard(
     {
       body: t.Object({
         name: t.String(),
-        email: t.String({ format: "email" }),
+        email: t.String({ format: 'email' }),
         password: t.String({ minLength: 6 }),
       }),
     },
     (app) =>
-      app.post("/", async ({ body }) => {
+      app.post('/', async ({ body }) => {
         const { name, email, password } = body;
-        const username = email.split("@")[0];
+        const username = email.split('@')[0];
 
         try {
           const hashedPassword = await Bun.password.hash(password);
@@ -43,16 +43,17 @@ export const userRouter = new Elysia({ prefix: "/users" })
           });
 
           return {
-            message: "User created successfully",
+            message: 'User created successfully',
             user,
           };
         } catch (e) {
-          return error(400, "User already exists");
+          console.log(e);
+          return error(400, 'User already exists');
         }
-      })
+      }),
   )
   .post(
-    "/login",
+    '/login',
     async ({ body, jwt }) => {
       const { email, password } = body;
 
@@ -61,12 +62,12 @@ export const userRouter = new Elysia({ prefix: "/users" })
       });
 
       if (!user) {
-        throw error(401, "Invalid credentials");
+        throw error(401, 'Invalid credentials');
       }
 
       const validPassword = await Bun.password.verify(password, user.password);
       if (!validPassword) {
-        throw error(401, "Invalid credentials");
+        throw error(401, 'Invalid credentials');
       }
 
       const token = await jwt.sign({
@@ -88,16 +89,16 @@ export const userRouter = new Elysia({ prefix: "/users" })
     },
     {
       body: t.Object({
-        email: t.String({ format: "email" }),
+        email: t.String({ format: 'email' }),
         password: t.String(),
       }),
-    }
+    },
   )
   .use(authPlugin)
-  .get("/me", async ({ user }) => {
+  .get('/me', async ({ user }) => {
     return { user };
   })
-  .get("/stats", async ({ user }) => {
+  .get('/stats', async ({ user }) => {
     const [favoriteCount, bookingCount] = await Promise.all([
       db.favorite.count({
         where: { user_id: user.id },
@@ -116,7 +117,7 @@ export const userRouter = new Elysia({ prefix: "/users" })
     };
   })
   .patch(
-    "/me",
+    '/me',
     async ({ user, body }) => {
       const updatedUser = await db.user.update({
         where: { id: user.id },
@@ -131,7 +132,7 @@ export const userRouter = new Elysia({ prefix: "/users" })
       });
 
       return {
-        message: "Profile updated successfully",
+        message: 'Profile updated successfully',
         user: updatedUser,
       };
     },
@@ -140,26 +141,26 @@ export const userRouter = new Elysia({ prefix: "/users" })
         t.Object({
           name: t.String(),
           username: t.String(),
-        })
+        }),
       ),
-    }
+    },
   )
-  .delete("/me", async ({ user }) => {
+  .delete('/me', async ({ user }) => {
     await db.user.delete({
       where: { id: user.id },
     });
 
     return {
-      message: "Account deleted successfully",
+      message: 'Account deleted successfully',
     };
   });
 
 function getRandomAvatar() {
   const avatars = [
-    "https://images.unsplash.com/photo-1557682224-5b8590cd9ec5",
-    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe",
-    "https://images.unsplash.com/photo-1618556450994-a6a128ef0d9d",
-    "https://images.unsplash.com/photo-1604076850742-4c7221f3101b",
+    'https://images.unsplash.com/photo-1557682224-5b8590cd9ec5',
+    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
+    'https://images.unsplash.com/photo-1618556450994-a6a128ef0d9d',
+    'https://images.unsplash.com/photo-1604076850742-4c7221f3101b',
   ];
 
   return avatars[Math.floor(Math.random() * avatars.length)];
